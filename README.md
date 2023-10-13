@@ -1,2 +1,2 @@
 # men-in-tights
-Robinhood API for rust
+Unofficial Robinhood API bindings for Rust. 📈
