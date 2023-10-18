@@ -1,5 +1,4 @@
 use crate::session::challenge::ChallengeType;
-use crate::session::challenge::ChallengeType::SMS;
 use serde::{Deserialize, Serialize};
 
 const CLIENT_ID: &str = "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS";
@@ -35,11 +34,30 @@ pub fn login_request(
     }
 }
 
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct OAuthRefreshRequest {
+    client_id: String,
+    expires_in: i64,
+    grant_type: String,
+    refresh_token: String,
+    scope: String,
+}
+
+pub fn refresh_request(refresh_token: &str) -> OAuthRefreshRequest {
+    OAuthRefreshRequest {
+        client_id: CLIENT_ID.to_string(),
+        expires_in: EXPIRATION_TIME,
+        grant_type: "refresh_token".to_string(),
+        refresh_token: refresh_token.to_string(),
+        scope: "internal".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
     use crate::session::challenge::ChallengeType::SMS;
-    use crate::session::oauth::login_request;
+    use crate::session::oauth::{login_request, refresh_request};
+    use indoc::indoc;
 
     #[test]
     fn login_request_serialize() {
@@ -58,13 +76,19 @@ mod test {
         }"#};
         assert_eq!(json, expected)
     }
-}
 
-// "password": self.password,
-// "username": self.username,
-// "grant_type": "password",
-// "client_id": CLIENT_ID,
-// "expires_in": EXPIRATION_TIME,
-// "scope": "internal",
-// "device_token": self.device_token,
-// "challenge_type": self.challenge_type,
+    #[test]
+    fn refresh_request_serialize() {
+        let request = refresh_request("refresh");
+        let json = serde_json::to_string_pretty(&request).expect("json serialize failed");
+        let expected = indoc! {r#"
+        {
+          "client_id": "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS",
+          "expires_in": 734000,
+          "grant_type": "refresh_token",
+          "refresh_token": "refresh",
+          "scope": "internal"
+        }"#};
+        assert_eq!(json, expected)
+    }
+}
