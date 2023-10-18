@@ -6,14 +6,14 @@ const EXPIRATION_TIME: i64 = 734000;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct OAuthLoginRequest {
-    challenge_type: ChallengeType,
-    client_id: String,
-    device_token: String,
-    expires_in: i64,
-    grant_type: String,
-    password: String,
-    scope: String,
-    username: String,
+    pub challenge_type: ChallengeType,
+    pub client_id: String,
+    pub device_token: String,
+    pub expires_in: i64,
+    pub grant_type: String,
+    pub password: String,
+    pub scope: String,
+    pub username: String,
 }
 
 pub fn login_request(
@@ -36,11 +36,11 @@ pub fn login_request(
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct OAuthRefreshRequest {
-    client_id: String,
-    expires_in: i64,
-    grant_type: String,
-    refresh_token: String,
-    scope: String,
+    pub client_id: String,
+    pub expires_in: i64,
+    pub grant_type: String,
+    pub refresh_token: String,
+    pub scope: String,
 }
 
 pub fn refresh_request(refresh_token: &str) -> OAuthRefreshRequest {
@@ -51,6 +51,10 @@ pub fn refresh_request(refresh_token: &str) -> OAuthRefreshRequest {
         refresh_token: refresh_token.to_string(),
         scope: "internal".to_string(),
     }
+}
+
+pub struct OAuthResponse {
+
 }
 
 #[cfg(test)]
