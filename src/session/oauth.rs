@@ -1,5 +1,7 @@
-use crate::session::challenge::ChallengeType;
+use std::collections::HashMap;
+use crate::session::challenge::{Challenge, ChallengeType};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 const CLIENT_ID: &str = "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS";
 const EXPIRATION_TIME: i64 = 734000;
@@ -53,23 +55,37 @@ pub fn refresh_request(refresh_token: &str) -> OAuthRefreshRequest {
     }
 }
 
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct OAuthResponse {
+    pub detail: String,
+    pub challenge: Option<Challenge>,
 
+    #[serde(default)]
+    pub mfa_required: bool,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub expires_in: i64,
+
+    #[serde(flatten)]
+    pub extra_fields: HashMap<String, Value>,
 }
 
 #[cfg(test)]
 mod test {
-    use crate::session::challenge::ChallengeType::SMS;
-    use crate::session::oauth::{login_request, refresh_request};
+    use std::collections::HashMap;
+    use crate::session::challenge::{Challenge, ChallengeStatus, ChallengeType};
+    use crate::session::oauth::{login_request, refresh_request, OAuthResponse};
+    use chrono::DateTime;
     use indoc::indoc;
+    use serde_json::json;
 
     #[test]
     fn login_request_serialize() {
-        let request = login_request("username", "password", SMS, "device");
+        let request = login_request("username", "password", ChallengeType::SMS, "device");
         let json = serde_json::to_string_pretty(&request).expect("json serialize failed");
         let expected = indoc! {r#"
         {
-          "challenge_type": "SMS",
+          "challenge_type": "sms",
           "client_id": "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS",
           "device_token": "device",
           "expires_in": 734000,
@@ -94,5 +110,76 @@ mod test {
           "scope": "internal"
         }"#};
         assert_eq!(json, expected)
+    }
+
+    #[test]
+    fn oauth_response_deserialize() {
+        let json = indoc! {
+            r#"
+            {
+              "detail": "detail",
+              "challenge": {
+                "id": "challenge_id",
+                "user": "user",
+                "type": "sms",
+                "status": "issued",
+                "expires_at": "2023-10-18T10:59:50.159306Z"
+              },
+              "mfa_required": true,
+              "access_token": "access",
+              "refresh_token": "refresh",
+              "expires_in": 100,
+              "some_other_field": "extra"
+            }
+            "#
+        };
+
+        let oauth: OAuthResponse = serde_json::from_str(json).expect("failed to deserialize");
+
+        let expected_challenge = Challenge {
+            id: "challenge_id".to_string(),
+            user: "user".to_string(),
+            challenge_type: ChallengeType::SMS,
+            status: ChallengeStatus::ISSUED,
+            remaining_attempts: 0,
+            remaining_retries: 0,
+            expires_at: DateTime::parse_from_rfc3339("2023-10-18T10:59:50.159306Z").unwrap(),
+            extra_fields: Default::default(),
+        };
+        let expected = OAuthResponse {
+            detail: "detail".to_string(),
+            challenge: Some(expected_challenge),
+            mfa_required: true,
+            access_token: Some("access".to_string()),
+            refresh_token: Some("refresh".to_string()),
+            expires_in: 100,
+            extra_fields: HashMap::from([("some_other_field".to_string(), json!("extra"))])
+        };
+        assert_eq!(oauth, expected)
+    }
+
+    #[test]
+    fn oauth_response_deserialize_minimal() {
+        let json = indoc! {
+            r#"
+            {
+              "detail": "detail",
+              "expires_in": 100
+            }
+            "#
+        };
+
+        let oauth: OAuthResponse = serde_json::from_str(json).expect("failed to deserialize");
+
+        let expected = OAuthResponse {
+            detail: "detail".to_string(),
+            challenge: None,
+            mfa_required: false,
+            access_token: None,
+            refresh_token: None,
+            expires_in: 100,
+            extra_fields: Default::default()
+        };
+        assert_eq!(oauth, expected)
     }
 }

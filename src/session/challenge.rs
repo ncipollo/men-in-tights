@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Challenge {
@@ -16,7 +16,7 @@ pub struct Challenge {
     pub remaining_retries: i32,
     pub expires_at: DateTime<FixedOffset>,
     #[serde(flatten)]
-    pub extra_fields: HashMap<String, Value>
+    pub extra_fields: HashMap<String, Value>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -31,16 +31,16 @@ pub enum ChallengeType {
 pub enum ChallengeStatus {
     ISSUED,
     VALIDATED,
-    FAILED
+    FAILED,
 }
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-    use chrono::{DateTime, Utc};
+    use crate::session::challenge::{Challenge, ChallengeStatus, ChallengeType};
+    use chrono::DateTime;
     use indoc::indoc;
     use serde_json::json;
-    use crate::session::challenge::{Challenge, ChallengeStatus, ChallengeType};
+    use std::collections::HashMap;
 
     #[test]
     fn challenge_deserialize() {
@@ -59,7 +59,7 @@ mod test {
             "#
         };
         let challenge: Challenge = serde_json::from_str(json).expect("failed to deserialize");
-        let expected = Challenge{
+        let expected = Challenge {
             id: "id".to_string(),
             user: "user".to_string(),
             challenge_type: ChallengeType::SMS,
@@ -67,7 +67,7 @@ mod test {
             remaining_attempts: 3,
             remaining_retries: 2,
             expires_at: DateTime::parse_from_rfc3339("2023-10-18T10:59:50.159306Z").unwrap(),
-            extra_fields: HashMap::from([("some_other_field".to_string(), json!("extra"))])
+            extra_fields: HashMap::from([("some_other_field".to_string(), json!("extra"))]),
         };
         assert_eq!(challenge, expected);
     }
@@ -86,7 +86,7 @@ mod test {
             "#
         };
         let challenge: Challenge = serde_json::from_str(json).expect("failed to deserialize");
-        let expected = Challenge{
+        let expected = Challenge {
             id: "id".to_string(),
             user: "user".to_string(),
             challenge_type: ChallengeType::EMAIL,
@@ -94,7 +94,7 @@ mod test {
             remaining_attempts: 0,
             remaining_retries: 0,
             expires_at: DateTime::parse_from_rfc3339("2023-10-18T10:59:50.159306Z").unwrap(),
-            extra_fields: Default::default()
+            extra_fields: Default::default(),
         };
         assert_eq!(challenge, expected);
     }
