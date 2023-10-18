@@ -71,4 +71,31 @@ mod test {
         };
         assert_eq!(challenge, expected);
     }
+
+    #[test]
+    fn challenge_deserialize_minimal() {
+        let json = indoc! {
+            r#"
+            {
+              "id": "id",
+              "user": "user",
+              "type": "email",
+              "status": "validated",
+              "expires_at": "2023-10-18T10:59:50.159306Z"
+            }
+            "#
+        };
+        let challenge: Challenge = serde_json::from_str(json).expect("failed to deserialize");
+        let expected = Challenge{
+            id: "id".to_string(),
+            user: "user".to_string(),
+            challenge_type: ChallengeType::EMAIL,
+            status: ChallengeStatus::VALIDATED,
+            remaining_attempts: 0,
+            remaining_retries: 0,
+            expires_at: DateTime::parse_from_rfc3339("2023-10-18T10:59:50.159306Z").unwrap(),
+            extra_fields: Default::default()
+        };
+        assert_eq!(challenge, expected);
+    }
 }
