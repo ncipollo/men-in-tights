@@ -1,7 +1,10 @@
-use std::collections::HashMap;
 use crate::session::challenge::{Challenge, ChallengeType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+
+// Models and IDs sourced from:
+// https://github.com/robinhood-unofficial/pyrh/blob/ceb57857f1391dc3d5c13bc2ef87cf6a5b512492/pyrh/models/sessionmanager.py#L1
 
 const CLIENT_ID: &str = "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS";
 const EXPIRATION_TIME: i64 = 734000;
@@ -72,12 +75,12 @@ pub struct OAuthResponse {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use crate::session::challenge::{Challenge, ChallengeStatus, ChallengeType};
     use crate::session::oauth::{login_request, refresh_request, OAuthResponse};
     use chrono::DateTime;
     use indoc::indoc;
     use serde_json::json;
+    use std::collections::HashMap;
 
     #[test]
     fn login_request_serialize() {
@@ -153,7 +156,7 @@ mod test {
             access_token: Some("access".to_string()),
             refresh_token: Some("refresh".to_string()),
             expires_in: 100,
-            extra_fields: HashMap::from([("some_other_field".to_string(), json!("extra"))])
+            extra_fields: HashMap::from([("some_other_field".to_string(), json!("extra"))]),
         };
         assert_eq!(oauth, expected)
     }
@@ -178,7 +181,7 @@ mod test {
             access_token: None,
             refresh_token: None,
             expires_in: 100,
-            extra_fields: Default::default()
+            extra_fields: Default::default(),
         };
         assert_eq!(oauth, expected)
     }
