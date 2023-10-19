@@ -3,6 +3,7 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::headers::{StrHeaderMap, StringHeaderMap};
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Challenge {
@@ -48,14 +49,7 @@ impl ChallengeResponse {
 
 pub fn challenge_response_headers(challenge: &Challenge) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    let name = "X-ROBINHOOD-CHALLENGE-RESPONSE-ID"
-        .parse::<HeaderName>()
-        .expect("failed to parse challenge header name");
-    let value = challenge
-        .id
-        .parse::<HeaderValue>()
-        .expect("failed to parse challenge header value");
-    headers.insert(name, value);
+    headers.insert_string("X-ROBINHOOD-CHALLENGE-RESPONSE-ID", challenge.id.to_string());
     headers
 }
 

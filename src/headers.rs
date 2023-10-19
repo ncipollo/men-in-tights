@@ -8,6 +8,10 @@ pub trait StrHeaderMap {
     fn insert_str_value(&mut self, name: HeaderName, value: &'static str) -> Option<HeaderValue>;
 }
 
+pub trait StringHeaderMap {
+    fn insert_string(&mut self, name: &'static str, value: String) -> Option<HeaderValue>;
+}
+
 impl StrHeaderMap for HeaderMap {
     fn insert_str(&mut self, name: &'static str, value: &'static str) -> Option<HeaderValue> {
         self.insert(header_name(name), header_value(value))
@@ -15,6 +19,15 @@ impl StrHeaderMap for HeaderMap {
 
     fn insert_str_value(&mut self, name: HeaderName, value: &'static str) -> Option<HeaderValue> {
         self.insert(name, header_value(value))
+    }
+}
+
+impl StringHeaderMap for HeaderMap {
+    fn insert_string(&mut self, name: &'static str, value: String) -> Option<HeaderValue> {
+        let header_value = value
+            .parse()
+            .expect(&format!("failed to parse header value: {value}"));
+        self.insert(header_name(name), header_value)
     }
 }
 
@@ -49,8 +62,8 @@ pub fn standard() -> HeaderMap {
 
 #[cfg(test)]
 mod test {
-    use reqwest::header::{ACCEPT, HeaderMap, HeaderValue};
-    use crate::headers::{standard, StrHeaderMap};
+    use crate::headers::{standard, StrHeaderMap, StringHeaderMap};
+    use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
 
     #[test]
     fn str_header_map_insert_str() {
@@ -68,6 +81,15 @@ mod test {
         let expected = "value".parse::<HeaderValue>().unwrap();
         assert_eq!(result, None);
         assert_eq!(headers.get(ACCEPT).unwrap(), expected);
+    }
+
+    #[test]
+    fn string_header_map_insert_string() {
+        let mut headers = HeaderMap::new();
+        let result = headers.insert_string("name", "value".to_string());
+        let expected = "value".parse::<HeaderValue>().unwrap();
+        assert_eq!(result, None);
+        assert_eq!(headers.get("name").unwrap(), expected);
     }
 
     #[test]
