@@ -1,4 +1,5 @@
 use chrono::{DateTime, FixedOffset};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -34,13 +35,39 @@ pub enum ChallengeStatus {
     FAILED,
 }
 
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct ChallengeResponse {
+    response: String,
+}
+
+impl ChallengeResponse {
+    pub fn new(response: String) -> Self {
+        Self { response }
+    }
+}
+
+pub fn challenge_response_headers(challenge: &Challenge) -> HeaderMap {
+    let mut headers = HeaderMap::new();
+    let name = "X-ROBINHOOD-CHALLENGE-RESPONSE-ID"
+        .parse::<HeaderName>()
+        .expect("failed to parse challenge header name");
+    let value = challenge
+        .id
+        .parse::<HeaderValue>()
+        .expect("failed to parse challenge header value");
+    headers.insert(name, value);
+    headers
+}
+
 #[cfg(test)]
 mod test {
-    use crate::session::challenge::{Challenge, ChallengeStatus, ChallengeType};
+    use crate::session::challenge::{Challenge, ChallengeResponse, ChallengeStatus, ChallengeType};
     use chrono::DateTime;
     use indoc::indoc;
+    use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
     use serde_json::json;
     use std::collections::HashMap;
+    use crate::session::challenge;
 
     #[test]
     fn challenge_deserialize() {
@@ -97,5 +124,38 @@ mod test {
             extra_fields: Default::default(),
         };
         assert_eq!(challenge, expected);
+    }
+
+    #[test]
+    fn challenge_response_serialize() {
+        let response = ChallengeResponse::new("1234".to_string());
+        let json = serde_json::to_string_pretty(&response).expect("json serialize failed");
+        let expected = indoc! {r#"
+        {
+          "response": "1234"
+        }"#};
+        assert_eq!(json, expected)
+    }
+
+    #[test]
+    fn challenge_response_headers() {
+        let challenge = Challenge {
+            id: "42".to_string(),
+            user: "".to_string(),
+            challenge_type: ChallengeType::SMS,
+            status: ChallengeStatus::ISSUED,
+            remaining_attempts: 0,
+            remaining_retries: 0,
+            expires_at: DateTime::parse_from_rfc3339("2023-10-18T10:59:50.159306Z").unwrap(),
+            extra_fields: HashMap::new(),
+        };
+        let headers = challenge::challenge_response_headers(&challenge);
+        let mut expected = HeaderMap::new();
+        expected.insert(
+            "X-ROBINHOOD-CHALLENGE-RESPONSE-ID".parse::<HeaderName>().unwrap(),
+            "42".parse::<HeaderValue>().unwrap(),
+        );
+
+        assert_eq!(headers, expected)
     }
 }
