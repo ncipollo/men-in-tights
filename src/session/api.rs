@@ -15,7 +15,7 @@ impl SessionApi {
     pub async fn login(&self, request: OAuthLoginRequest) -> Result<String, RobinhoodError> {
         let oauth = self
             .client
-            .post(urls::api("oauth2/token"))
+            .post(urls::api("oauth2/token/"))
             .json(&request)
             .headers(headers::standard())
             .send()
